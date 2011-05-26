@@ -1,0 +1,14 @@
+{
+  "author": "Euan Goddard <euan.goddard@gmail.com>",
+  "name": "smtpevent",
+  "description": "Evented SMTP server",
+  "version": "0.0.1",
+  "repository": {
+    "url": "https://github.com/euangoddard/node-smtpevent"
+  },
+  "engines": {
+    "node": "~v0.4.7"
+  },
+  "dependencies": {},
+  "devDependencies": {}
+}
