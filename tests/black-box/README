@@ -1,0 +1,16 @@
+The tests in this section are "black box" tests or, put another way, tests
+which test the system as a whole without concerning the code behind the module.
+
+To run the tests, you will need to have node installed (obviously!) and have a
+version of python as the SMTP client uses the built in one in python's standard
+library. The tests have all been verified with python 2.5.
+
+The tests require the testing server to be running. In the current directory:
+
+$ node test-server.js
+
+Then you can run the tests that you want:
+
+$ python <name of test>.py.
+
+For unit tests, see the "unit tests" section.
