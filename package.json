@@ -2,7 +2,7 @@
   "author": "Euan Goddard <euan.goddard@gmail.com>",
   "name": "smtpevent",
   "description": "Evented SMTP server",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "repository": {
     "type": "git",
     "url": "git://github.com/euangoddard/node-smtpevent.git"

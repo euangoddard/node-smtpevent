@@ -58,7 +58,9 @@ class SequentialTests(unittest.TestCase):
     def testWelcomeMessage(self):
         """On connecting the server sends a 220 response with a welcome message."""
         client = Telnet('localhost', 1025)
-        self.assertEqual(client.read_some(), '220 test node.js SMTP server\r\n')
+        self.assertEqual(client.read_some(),
+                         '220 test node.js smtpevent server 0.0.2\r\n'
+                         )
         client.close()
         
     def testUnknownCommand(self):

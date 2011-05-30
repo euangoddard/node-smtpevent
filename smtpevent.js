@@ -17,7 +17,7 @@
 
 /**
  * @author Euan Goddard
- * @version 0.0.1
+ * @version 0.0.2
  */
 
 var net = require('net'),
@@ -28,9 +28,12 @@ var SMTPServer = function(hostname) {
     net.Server.call(this);
     var that = this;
     util.log('SMTP server started on "'+ hostname + '"');
+
     this.on('connection', function (socket) {
-        return new SMTPConnection(hostname, that ,socket);
+        return new SMTPConnection(hostname, that, socket);
     });
+    
+    this.version = '0.0.2';
     
 };
 var SMTPConnection = function (hostname, server, socket) {
@@ -55,7 +58,7 @@ var SMTPConnection = function (hostname, server, socket) {
      * @param {String} value
      * @return {String} value stripped of all whitespace
      */
-    var strip = function(value) {
+    var strip = function (value) {
         return value.replace(/^\s+/, '').replace(/\s+$/, '');
     }
     
@@ -85,31 +88,39 @@ var SMTPConnection = function (hostname, server, socket) {
     }
     
     /**
+     * Emit a response to the client
+     * @param {String} message
+     */
+    var send_response = function (message) {
+        socket.write(message + EOL);
+    }
+    
+    /**
      * Functions to handle incoming SMTP commands
      */
-    SMTP = {
+    var SMTP = {
         HELO: function (argument) {
             if (!argument) {
-                self.push('501 Syntax: HELO hostname')
+                send_response('501 Syntax: HELO hostname')
                 return;
             }
             if (greeting) {
-                self.push('503 Duplicate HELO/EHLO');
+                send_response('503 Duplicate HELO/EHLO');
             } else {
                 greeting = argument;
-                self.push('250 ' + hostname + ' Hello ' + socket.remoteAddress);
+                send_response('250 ' + hostname + ' Hello ' + socket.remoteAddress);
             }
         },
         NOOP: function (argument) {
             if (argument) {
-                self.push('501 Syntax: NOOP');
+                send_response('501 Syntax: NOOP');
             } else {
-                self.push('250 Ok');
+                send_response('250 Ok');
             }
         },
         QUIT: function (argument) {
             // Ignore any argument
-            self.push('221 ' + hostname + ' closing connection');
+            send_response('221 ' + hostname + ' closing connection');
             socket.end();
         },
         MAIL: function (argument) {
@@ -117,73 +128,63 @@ var SMTPConnection = function (hostname, server, socket) {
             util.log('===> MAIL ' + argument);
             
             if (!address) {
-                self.push('501 Syntax: MAIL FROM:<address>');
+                send_response('501 Syntax: MAIL FROM:<address>');
                 return;
             }
             if (mailfrom) {
-                self.push('503 Error: nested MAIL command');
+                send_response('503 Error: nested MAIL command');
                 return;
             }
             mailfrom = address;
             util.log('sender: ' + mailfrom);
 
-            self.push('250 Ok');
+            send_response('250 Ok');
         },
         RCPT: function (argument) {
             util.log('===> RCPT ' + argument);
             if (!mailfrom) {
-                self.push('503 Error: need MAIL command');
+                send_response('503 Error: need MAIL command');
                 return;
             }
             address = get_address('TO:', argument);
             if (!address) {
-                self.push('501 Syntax: RCPT TO: <address>');
+                send_response('501 Syntax: RCPT TO: <address>');
                 return;
             }
             rcpttos.push(address);
             util.log('recips: ' + rcpttos.join(', '));
-            self.push('250 Ok');
+            send_response('250 Ok');
         },
         RSET: function (argument) {
             if (argument) {
-                self.push('501 Syntax: RSET');
+                send_response('501 Syntax: RSET');
                 return;
             }
             // Reset the sender, recipients, and data, but not the greeting
             mailfrom = null;
             rcpttos = [];
             state = COMMAND;
-            self.push('250 Ok');
+            send_response('250 Ok');
         },
         DATA: function (argument) {
             if (!rcpttos.length) {
-                self.push('503 Error: need RCPT command');
+                send_response('503 Error: need RCPT command');
                 return;
             }
             if (argument) {
-                self.push('501 Syntax: DATA');
+                send_response('501 Syntax: DATA');
                 return;
             }
             
             state = DATA;
-            self.push('354 End data with <CR><LF>.<CR><LF>');
+            send_response('354 End data with <CR><LF>.<CR><LF>');
         }
     }
         
-    // Public functions:
-    
-    /**
-     * Emit a push response to the client
-     * @param {String} message
-     */
-    this.push = function (message) {
-        socket.write(message + EOL);
-    }
-    
     // Event listeners:
     socket.on('connect', function () {
         util.log('Socket connected from: ' + socket.remoteAddress + '. Sending welcome message.');
-        self.push('220 ' + hostname +' node.js SMTP server');
+        send_response('220 ' + hostname +' node.js smtpevent server ' + server.version);
     });
     
     socket.on('data', function (buffer) {
@@ -198,7 +199,7 @@ var SMTPConnection = function (hostname, server, socket) {
         if (state === COMMAND) {
             // Handle the situation where the client is issuing SMTP commands:
             if (!line) {
-                self.push('500 Error: bad syntax');
+                send_response('500 Error: bad syntax');
                 return;
             }
             
@@ -213,7 +214,7 @@ var SMTPConnection = function (hostname, server, socket) {
             }
 
             if (!(command in SMTP)) {
-                self.push('502 Error: command "' + command + '" not implemented');
+                send_response('502 Error: command "' + command + '" not implemented');
                 return;
                 
             }
@@ -225,7 +226,7 @@ var SMTPConnection = function (hostname, server, socket) {
             // Handle the case where the client is transmitting data (i.e. not a
             // command)
             if (state !== DATA) {
-                self.push('451 Internal confusion');
+                send_response('451 Internal confusion');
                 return;
             }
             // Remove extraneous carriage returns and de-transparency according
@@ -248,7 +249,7 @@ var SMTPConnection = function (hostname, server, socket) {
             rcpttos = [];
             mailfrom = null;
             state = COMMAND;
-            self.push('250 Ok');
+            send_response('250 Ok');
         }
     });
     
