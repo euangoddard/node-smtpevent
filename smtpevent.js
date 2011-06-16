@@ -229,6 +229,11 @@ var SMTPConnection = function (hostname, server, socket) {
                 send_response('451 Internal confusion');
                 return;
             }
+            
+            // Ensure that the terminator which appears in the line is removed
+            // from the final message:
+            line = line.replace(/\r\n\.\r\n$/, '');
+            
             // Remove extraneous carriage returns and de-transparency according
             // to RFC 821, Section 4.5.2.
             lines = line.split('\r\n');
