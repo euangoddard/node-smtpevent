@@ -182,11 +182,6 @@ var SMTPConnection = function (hostname, server, socket) {
     }
         
     // Event listeners:
-    socket.on('connect', function () {
-        util.log('Socket connected from: ' + socket.remoteAddress + '. Sending welcome message.');
-        send_response('220 ' + hostname +' node.js smtpevent server ' + server.version);
-    });
-    
     socket.on('data', function (buffer) {
         var line = buffer.toString(),
             method = null,
@@ -262,6 +257,9 @@ var SMTPConnection = function (hostname, server, socket) {
         util.log('Socket closed, destroying SMTPConnection instance');
         delete self;
     });
+    
+    util.log('Socket connected from: ' + socket.remoteAddress + '. Sending welcome message.');
+    send_response('220 ' + hostname +' node.js smtpevent server ' + server.version);
 }
     
 sys.inherits(SMTPServer, net.Server);
